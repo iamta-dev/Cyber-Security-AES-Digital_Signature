@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+import base64
 from Crypto import Random
 from Crypto.Cipher import AES
 import os
@@ -19,7 +20,7 @@ class Encryptor:
         message = self.pad(message)
         iv = Random.new().read(AES.block_size)
         cipher = AES.new(key, AES.MODE_CBC, iv)
-        return iv + cipher.encrypt(message)
+        return base64.b64encode(iv + cipher.encrypt(message))
 
     def encrypt_file(self, file_name):
         with open(file_name, 'rb') as fo:
@@ -28,8 +29,18 @@ class Encryptor:
         with open(file_name + ".aes", 'wb') as fo:
             fo.write(enc)
         os.remove(file_name)
+    
+    def encrypt_msg_txt_file(self, file_name):
+        with open(file_name, 'rb') as fo:
+            plaintext = fo.read()
+        enc = self.encrypt(plaintext, self.key)
 
+        f = open(file_name.split('.')[0]+'Encrypted.txt', 'wb')
+        f.write(enc)
+        f.close()
+        
     def decrypt(self, ciphertext, key):
+        ciphertext = base64.b64decode(ciphertext)
         iv = ciphertext[:AES.block_size]
         cipher = AES.new(key, AES.MODE_CBC, iv)
         plaintext = cipher.decrypt(ciphertext[AES.block_size:])
@@ -43,6 +54,14 @@ class Encryptor:
             fo.write(dec)
         os.remove(file_name)
 
+    def decrypt_msg_txt_file(self, file_name):
+        with open(file_name, 'rb') as fo:
+            ciphertext = fo.read()
+        dec = self.decrypt(ciphertext, self.key)
+        with open(file_name.split('.')[0]+'Decrypted.txt', 'wb') as fo:
+            fo.write(dec)
+            fo.close()
+
 
 key = b'[EX\xc8\xd5\xbfI{\xa2$\x05(\xd5\x18\xbf\xc0\x85)\x10nc\x94\x02)j\xdf\xcb\xc4\x94\x9d(\x9e'
 enc = Encryptor(key)
@@ -52,13 +71,17 @@ clear = lambda: os.system('cls')
 while True:
     clear()
     choice = int(input(
-        "1. Press '1' to encrypt file.\n2. Press '2' to decrypt file.\n3. Press '3' to exit.\n"))
+        "1. Press '1' to encrypt msg text file.\n2. Press '2' to decrypt msg text file.\n3. Press '3' to encrypt all file.\n4. Press '4' to decrypt all file.\n5. Press '5' to exit.\nEnter Option:"))
     clear()
     if choice == 1:
-        enc.encrypt_file(str(input("Enter name of file to encrypt: ")))
-    elif choice == 2:
-        enc.decrypt_file(str(input("Enter name of file to decrypt: ")))
+        enc.encrypt_msg_txt_file(str(input("Enter name of file to encrypt msg text: ")))
+    if choice == 2:
+        enc.decrypt_msg_txt_file(str(input("Enter name of file to decrypt msg text: ")))
     elif choice == 3:
+        enc.encrypt_file(str(input("Enter name of file to encrypt: ")))
+    elif choice == 4:
+        enc.decrypt_file(str(input("Enter name of file to decrypt: ")))
+    elif choice == 4:
         exit()
     else:
         print("Please select a valid option!")
